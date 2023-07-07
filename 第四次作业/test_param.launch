@@ -1,0 +1,5 @@
+<launch> 
+   <node pkg="yaml_param" type="yaml_publisher" name="pub" output="screen" /> 
+   <rosparam command="load" file="$(find yaml_param)/param/param_vscode.yaml" /> 
+   <node pkg="yaml_param" type="yaml_subscriber" name="sub" output="screen" /> 
+  </launch> 
