@@ -1,0 +1,1520 @@
+ROS中的程序即便使用不同的编程语言，实现流程也大致类似，以当前HelloWorld程序为例，实现流程大致如下：
+
+先创建一个工作空间；
+再创建一个功能包；
+编辑源文件；
+编辑配置文件；
+编译并执行。
+上述流程中，C++和Python只是在步骤3和步骤4的实现细节上存在差异，其他流程基本一致。本节先实现C++和Python程序编写的通用部分步骤1与步骤2，1.3.2节和1.3.3节再分别使用C++和Python编写HelloWorld。
+
+1.创建工作空间并初始化
+mkdir -p 自定义空间名称/src
+cd 自定义空间名称
+catkin_make
+Copy
+上述命令，首先会创建一个工作空间以及一个 src 子目录，然后再进入工作空间调用 catkin_make命令编译。
+
+2.进入 src 创建 ros 包并添加依赖
+cd src
+catkin_create_pkg 自定义ROS包名 roscpp rospy std_msgs
+Copy
+上述命令，会在工作空间下生成一个功能包，该功能包依赖于 roscpp、rospy 与 std_msgs，其中roscpp是使用C++实现的库，而rospy则是使用python实现的库，std_msgs是标准消息库，创建ROS功能包时，一般都会依赖这三个库实现。
+
+注意: 在ROS中，虽然实现同一功能时，C++和Python可以互换，但是具体选择哪种语言，需要视需求而定，因为两种语言相较而言:C++运行效率高但是编码效率低，而Python则反之，基于二者互补的特点，ROS设计者分别设计了roscpp与rospy库，前者旨在成为ROS的高性能库，而后者则一般用于对性能无要求的场景，旨在提高开发效率。
+1.创建工作空间并初始化
+mkdir -p 自定义空间名称/src
+cd 自定义空间名称
+catkin_make
+Copy
+上述命令，首先会创建一个工作空间以及一个 src 子目录，然后再进入工作空间调用 catkin_make命令编译。
+
+2.进入 src 创建 ros 包并添加依赖
+cd src
+catkin_create_pkg 自定义ROS包名 roscpp rospy std_msgs
+Copy
+上述命令，会在工作空间下生成一个功能包，该功能包依赖于 roscpp、rospy 与 std_msgs，其中roscpp是使用C++实现的库，而rospy则是使用python实现的库，std_msgs是标准消息库，创建ROS功能包时，一般都会依赖这三个库实现。
+
+注意: 在ROS中，虽然实现同一功能时，C++和Python可以互换，但是具体选择哪种语言，需要视需求而定，因为两种语言相较而言:C++运行效率高但是编码效率低，而Python则反之，基于二者互补的特点，ROS设计者分别设计了roscpp与rospy库，前者旨在成为ROS的高性能库，而后者则一般用于对性能无要求的场景，旨在提高开发效率。
+vscode 使用_基本配置
+4.1 创建 ROS 工作空间
+mkdir -p xxx_ws/src(必须得有 src)
+cd xxx_ws
+catkin_make
+Copy
+4.2 启动 vscode
+进入 xxx_ws 启动 vscode
+
+cd xxx_ws
+code .
+Copy
+4.3 vscode 中编译 ros
+快捷键 ctrl + shift + B 调用编译，选择:catkin_make:build
+
+可以点击配置设置为默认，修改.vscode/tasks.json 文件
+
+{
+// 有关 tasks.json 格式的文档，请参见
+    // https://go.microsoft.com/fwlink/?LinkId=733558
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "catkin_make:debug", //代表提示的描述性信息
+            "type": "shell",  //可以选择shell或者process,如果是shell代码是在shell里面运行一个命令，如果是process代表作为一个进程来运行
+            "command": "catkin_make",//这个是我们需要运行的命令
+            "args": [],//如果需要在命令后面加一些后缀，可以写在这里，比如-DCATKIN_WHITELIST_PACKAGES=“pac1;pac2”
+            "group": {"kind":"build","isDefault":true},
+            "presentation": {
+                "reveal": "always"//可选always或者silence，代表是否输出信息
+            },
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}
+Copy
+4.4 创建 ROS 功能包
+选定 src 右击 ---> create catkin package
+
+设置包名 添加依赖
+
+
+
+4.5 C++ 实现
+在功能包的 src 下新建 cpp 文件
+
+/*
+    控制台输出 HelloVSCode !!!
+
+*/
+#include "ros/ros.h"
+
+int main(int argc, char *argv[])
+{
+    setlocale(LC_ALL,"");
+    //执行节点初始化
+    ros::init(argc,argv,"HelloVSCode");
+
+    //输出日志
+    ROS_INFO("Hello VSCode!!!哈哈哈哈哈哈哈哈哈哈");
+    return 0;
+}
+Copy
+PS1: 如果没有代码提示
+
+修改 .vscode/c_cpp_properties.json
+
+设置 "cppStandard": "c++17"
+
+PS2: main 函数的参数不可以被 const 修饰
+
+PS3: 当ROS__INFO 终端输出有中文时，会出现乱码
+
+INFO: ????????????????????????
+
+解决办法：在函数开头加入下面代码的任意一句
+
+setlocale(LC_CTYPE, "zh_CN.utf8");
+setlocale(LC_ALL, "");
+一个程序中可能需要启动多个节点，比如:ROS 内置的小乌龟案例，如果要控制乌龟运动，要启动多个窗口，分别启动 roscore、乌龟界面节点、键盘控制节点。如果每次都调用 rosrun 逐一启动，显然效率低下，如何优化?
+
+官方给出的优化策略是使用 launch 文件，可以一次性启动多个 ROS 节点。
+
+2.实现
+选定功能包右击 ---> 添加 launch 文件夹
+
+选定 launch 文件夹右击 ---> 添加 launch 文件
+
+编辑 launch 文件内容
+
+<launch>
+    <node pkg="helloworld" type="demo_hello" name="hello" output="screen" />
+    <node pkg="turtlesim" type="turtlesim_node" name="t1"/>
+    <node pkg="turtlesim" type="turtle_teleop_key" name="key1" />
+</launch>
+Copy
+node ---> 包含的某个节点
+
+pkg -----> 功能包
+
+type ----> 被运行的节点文件
+
+name --> 为节点命名
+
+output-> 设置日志的输出目标
+
+运行 launch 文件
+
+roslaunch 包名 launch文件名
+
+运行结果: 一次性启动了多个节点
+2.1.1 理论模型
+话题通信实现模型是比较复杂的，该模型如下图所示,该模型中涉及到三个角色:
+
+ROS Master (管理者)
+Talker (发布者)
+Listener (订阅者)
+ROS Master 负责保管 Talker 和 Listener 注册的信息，并匹配话题相同的 Talker 与 Listener，帮助 Talker 与 Listener 建立连接，连接建立后，Talker 可以发布消息，且发布的消息会被 Listener 订阅。
+0.Talker注册
+Talker启动后，会通过RPC在 ROS Master 中注册自身信息，其中包含所发布消息的话题名称。ROS Master 会将节点的注册信息加入到注册表中。
+
+1.Listener注册
+Listener启动后，也会通过RPC在 ROS Master 中注册自身信息，包含需要订阅消息的话题名。ROS Master 会将节点的注册信息加入到注册表中。
+
+2.ROS Master实现信息匹配
+ROS Master 会根据注册表中的信息匹配Talker 和 Listener，并通过 RPC 向 Listener 发送 Talker 的 RPC 地址信息。
+
+3.Listener向Talker发送请求
+Listener 根据接收到的 RPC 地址，通过 RPC 向 Talker 发送连接请求，传输订阅的话题名称、消息类型以及通信协议(TCP/UDP)。
+
+4.Talker确认请求
+Talker 接收到 Listener 的请求后，也是通过 RPC 向 Listener 确认连接信息，并发送自身的 TCP 地址信息。
+
+5.Listener与Talker件里连接
+Listener 根据步骤4 返回的消息使用 TCP 与 Talker 建立网络连接。
+
+6.Talker向Listener发送消息
+连接建立后，Talker 开始向 Listener 发布消息。
+
+注意1:上述实现流程中，前五步使用的 RPC协议，最后两步使用的是 TCP 协议
+
+注意2: Talker 与 Listener 的启动无先后顺序要求
+
+注意3: Talker 与 Listener 都可以有多个
+
+注意4: Talker 与 Listener 连接建立后，不再需要 ROS Master。也即，即便关闭ROS Master，Talker 与 Listern 照常通信。
+在模型实现中，ROS master 不需要实现，而连接的建立也已经被封装了，需要关注的关键点有三个:
+
+发布方
+接收方
+数据(此处为普通文本)
+流程:
+
+编写发布方实现；
+编写订阅方实现；
+编辑配置文件；
+编译并执行。
+1.发布方
+/*
+    需求: 实现基本的话题通信，一方发布数据，一方接收数据，
+         实现的关键点:
+         1.发送方
+         2.接收方
+         3.数据(此处为普通文本)
+
+         PS: 二者需要设置相同的话题
+
+
+    消息发布方:
+        循环发布信息:HelloWorld 后缀数字编号
+
+    实现流程:
+        1.包含头文件 
+        2.初始化 ROS 节点:命名(唯一)
+        3.实例化 ROS 句柄
+        4.实例化 发布者 对象
+        5.组织被发布的数据，并编写逻辑发布数据
+
+*/
+// 1.包含头文件 
+#include "ros/ros.h"
+#include "std_msgs/String.h" //普通文本类型的消息
+#include <sstream>
+
+int main(int argc, char  *argv[])
+{   
+    //设置编码
+    setlocale(LC_ALL,"");
+
+    //2.初始化 ROS 节点:命名(唯一)
+    // 参数1和参数2 后期为节点传值会使用
+    // 参数3 是节点名称，是一个标识符，需要保证运行后，在 ROS 网络拓扑中唯一
+    ros::init(argc,argv,"talker");
+    //3.实例化 ROS 句柄
+    ros::NodeHandle nh;//该类封装了 ROS 中的一些常用功能
+
+    //4.实例化 发布者 对象
+    //泛型: 发布的消息类型
+    //参数1: 要发布到的话题
+    //参数2: 队列中最大保存的消息数，超出此阀值时，先进的先销毁(时间早的先销毁)
+    ros::Publisher pub = nh.advertise<std_msgs::String>("chatter",10);
+
+    //5.组织被发布的数据，并编写逻辑发布数据
+    //数据(动态组织)
+    std_msgs::String msg;
+    // msg.data = "你好啊！！！";
+    std::string msg_front = "Hello 你好！"; //消息前缀
+    int count = 0; //消息计数器
+
+    //逻辑(一秒10次)
+    ros::Rate r(1);
+
+    //节点不死
+    while (ros::ok())
+    {
+        //使用 stringstream 拼接字符串与编号
+        std::stringstream ss;
+        ss << msg_front << count;
+        msg.data = ss.str();
+        //发布消息
+        pub.publish(msg);
+        //加入调试，打印发送的消息
+        ROS_INFO("发送的消息:%s",msg.data.c_str());
+
+        //根据前面制定的发送贫频率自动休眠 休眠时间 = 1/频率；
+        r.sleep();
+        count++;//循环结束前，让 count 自增
+        //暂无应用
+        ros::spinOnce();
+    }
+
+
+    return 0;
+}
+Copy
+2.订阅方
+/*
+    需求: 实现基本的话题通信，一方发布数据，一方接收数据，
+         实现的关键点:
+         1.发送方
+         2.接收方
+         3.数据(此处为普通文本)
+
+
+    消息订阅方:
+        订阅话题并打印接收到的消息
+
+    实现流程:
+        1.包含头文件 
+        2.初始化 ROS 节点:命名(唯一)
+        3.实例化 ROS 句柄
+        4.实例化 订阅者 对象
+        5.处理订阅的消息(回调函数)
+        6.设置循环调用回调函数
+
+*/
+// 1.包含头文件 
+#include "ros/ros.h"
+#include "std_msgs/String.h"
+
+void doMsg(const std_msgs::String::ConstPtr& msg_p){
+    ROS_INFO("我听见:%s",msg_p->data.c_str());
+    // ROS_INFO("我听见:%s",(*msg_p).data.c_str());
+}
+int main(int argc, char  *argv[])
+{
+    setlocale(LC_ALL,"");
+    //2.初始化 ROS 节点:命名(唯一)
+    ros::init(argc,argv,"listener");
+    //3.实例化 ROS 句柄
+    ros::NodeHandle nh;
+
+    //4.实例化 订阅者 对象
+    ros::Subscriber sub = nh.subscribe<std_msgs::String>("chatter",10,doMsg);
+    //5.处理订阅的消息(回调函数)
+
+    //     6.设置循环调用回调函数
+    ros::spin();//循环读取接收的数据，并调用回调函数处理
+
+    return 0;
+}
+Copy
+3.配置 CMakeLists.txt
+add_executable(Hello_pub
+  src/Hello_pub.cpp
+)
+add_executable(Hello_sub
+  src/Hello_sub.cpp
+)
+
+target_link_libraries(Hello_pub
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(Hello_sub
+  ${catkin_LIBRARIES}
+)
+Copy
+4.执行
+1.启动 roscore;
+
+2.启动发布节点;
+
+3.启动订阅节点。
+
+运行结果与引言部分的演示案例1类似。
+
+5.注意
+补充0:
+
+vscode 中的 main 函数 声明 int main(int argc, char const *argv[]){}，默认生成 argv 被 const 修饰，需要去除该修饰符
+
+补充1:
+
+ros/ros.h No such file or directory .....
+
+检查 CMakeList.txt find_package 出现重复,删除内容少的即可
+
+参考资料:https://answers.ros.org/question/237494/fatal-error-rosrosh-no-such-file-or-directory/
+
+补充2:
+
+find_package 不添加一些包，也可以运行啊， ros.wiki 答案如下
+
+You may notice that sometimes your project builds fine even if you did not call find_package with all dependencies. This is because catkin combines all your projects into one, so if an earlier project calls find_package, yours is configured with the same values. But forgetting the call means your project can easily break when built in isolation.
+Copy
+补充3:
+
+订阅时，第一条数据丢失
+
+原因: 发送第一条数据时， publisher 还未在 roscore 注册完毕
+
+解决: 注册后，加入休眠 ros::Duration(3.0).sleep(); 延迟第一条数据的发送
+
+PS：可以使用 rqt_graph 查看节点关系。
+在 ROS 通信协议中，数据载体是一个较为重要组成部分，ROS 中通过 std_msgs 封装了一些原生的数据类型,比如:String、Int32、Int64、Char、Bool、Empty.... 但是，这些数据一般只包含一个 data 字段，结构的单一意味着功能上的局限性，当传输一些复杂的数据，比如: 激光雷达的信息... std_msgs 由于描述性较差而显得力不从心，这种场景下可以使用自定义的消息类型
+
+msgs只是简单的文本文件，每行具有字段类型和字段名称，可以使用的字段类型有：
+
+int8, int16, int32, int64 (或者无符号类型: uint*)
+
+float32, float64
+
+string
+
+time, duration
+
+other msg files
+
+variable-length array[] and fixed-length array[C]
+
+ROS中还有一种特殊类型：Header，标头包含时间戳和ROS中常用的坐标帧信息。会经常看到msg文件的第一行具有Header标头。
+
+需求:创建自定义消息，该消息包含人的信息:姓名、身高、年龄等。
+
+流程:
+
+按照固定格式创建 msg 文件
+编辑配置文件
+编译生成可以被 Python 或 C++ 调用的中间文件
+1.定义msg文件
+功能包下新建 msg 目录，添加文件 Person.msg
+
+string name
+uint16 age
+float64 height
+Copy
+2.编辑配置文件
+package.xml中添加编译依赖与执行依赖
+
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <!-- 
+  exce_depend 以前对应的是 run_depend 现在非法
+  -->
+Copy
+CMakeLists.txt编辑 msg 相关配置
+
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  rospy
+  std_msgs
+  message_generation
+)
+# 需要加入 message_generation,必须有 std_msgs
+Copy
+## 配置 msg 源文件
+add_message_files(
+  FILES
+  Person.msg
+)
+Copy
+# 生成消息时依赖于 std_msgs
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+Copy
+#执行时依赖
+catkin_package(
+#  INCLUDE_DIRS include
+#  LIBRARIES demo02_talker_listener
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+#  DEPENDS system_lib
+)
+Copy
+3.编译
+编译后的中间文件查看:
+
+C++ 需要调用的中间文件(.../工作空间/devel/include/包名/xxx.h)
+2.2.1 服务通信理论模型
+服务通信较之于话题通信更简单些，理论模型如下图所示，该模型中涉及到三个角色:
+
+ROS master(管理者)
+Server(服务端)
+Client(客户端)
+ROS Master 负责保管 Server 和 Client 注册的信息，并匹配话题相同的 Server 与 Client ，帮助 Server 与 Client 建立连接，连接建立后，Client 发送请求信息，Server 返回响应信息
+0.Server注册
+Server 启动后，会通过RPC在 ROS Master 中注册自身信息，其中包含提供的服务的名称。ROS Master 会将节点的注册信息加入到注册表中。
+
+1.Client注册
+Client 启动后，也会通过RPC在 ROS Master 中注册自身信息，包含需要请求的服务的名称。ROS Master 会将节点的注册信息加入到注册表中。
+
+2.ROS Master实现信息匹配
+ROS Master 会根据注册表中的信息匹配Server和 Client，并通过 RPC 向 Client 发送 Server 的 TCP 地址信息。
+
+3.Client发送请求
+Client 根据步骤2 响应的信息，使用 TCP 与 Server 建立网络连接，并发送请求数据。
+
+4.Server发送响应
+Server 接收、解析请求的数据，并产生响应结果返回给 Client。
+
+注意:
+
+1.客户端请求被处理时，需要保证服务器已经启动；
+
+2.服务端和客户端都可以存在多个。
+2.3.1 参数服务器理论模型
+参数服务器实现是最为简单的，该模型如下图所示,该模型中涉及到三个角色:
+
+ROS Master (管理者)
+Talker (参数设置者)
+Listener (参数调用者)
+ROS Master 作为一个公共容器保存参数，Talker 可以向容器中设置参数，Listener 可以获取参数。
+
+1.Talker 设置参数
+Talker 通过 RPC 向参数服务器发送参数(包括参数名与参数值)，ROS Master 将参数保存到参数列表中。
+
+2.Listener 获取参数
+Listener 通过 RPC 向参数服务器发送参数查找请求，请求中包含要查找的参数名。
+
+3.ROS Master 向 Listener 发送参数值
+ROS Master 根据步骤2请求提供的参数名查找参数值，并将查询结果通过 RPC 发送给 Listener。
+
+参数可使用数据类型:
+
+32-bit integers
+
+booleans
+
+strings
+
+doubles
+
+iso8601 dates
+
+lists
+
+base64-encoded binary data
+
+字典
+
+注意:参数服务器不是为高性能而设计的，因此最好用于存储静态的非二进制的简单数据
+常见的API
+
+初始化
+/** @brief ROS初始化函数。
+ *
+ * 该函数可以解析并使用节点启动时传入的参数(通过参数设置节点名称、命名空间...) 
+ *
+ * 该函数有多个重载版本，如果使用NodeHandle建议调用该版本。 
+ *
+ * \param argc 参数个数
+ * \param argv 参数列表
+ * \param name 节点名称，需要保证其唯一性，不允许包含命名空间
+ * \param options 节点启动选项，被封装进了ros::init_options
+ *
+ */
+void init(int &argc, char **argv, const std::string& name, uint32_t options = 0);
+
+
+话题与服务相关对象
+C++
+在 roscpp 中，话题和服务的相关对象一般由 NodeHandle 创建。
+
+NodeHandle有一个重要作用是可以用于设置命名空间，这是后期的重点，但是本章暂不介绍。
+
+1.发布对象
+2.订阅对象
+3.服务对象
+4.客户端对象
+
+ 回旋函数
+1.spinOnce()
+/**
+ * \brief 处理一轮回调
+ *
+ * 一般应用场景:
+ *     在循环体内，处理所有可用的回调函数
+ * 
+ */
+ROSCPP_DECL void spinOnce();
+2.spin()
+/** 
+ * \brief 进入循环处理回调 
+ */
+ROSCPP_DECL void spin();
+3.二者比较
+相同点:二者都用于处理回调函数；
+
+不同点:ros::spin() 是进入了循环执行回调函数，而 ros::spinOnce() 只会执行一次回调函数(没有循环)，在 ros::spin() 后的语句不会执行到，而 ros::spinOnce() 后的语句可以执行。
+第 4 章 ROS运行管理
+ROS是多进程(节点)的分布式框架，一个完整的ROS系统实现：
+
+可能包含多台主机；
+每台主机上又有多个工作空间(workspace)；
+每个的工作空间中又包含多个功能包(package)；
+每个功能包又包含多个节点(Node)，不同的节点都有自己的节点名称；
+每个节点可能还会设置一个或多个话题(topic)...
+在多级层深的ROS系统中，其实现与维护可能会出现一些问题，比如，如何关联不同的功能包，繁多的ROS节点应该如何启动？功能包、节点、话题、参数重名时应该如何处理？不同主机上的节点如何通信？
+
+本章主要内容介绍在ROS中上述问题的解决策略(见本章目录)，预期达成学习目标也与上述问题对应：
+
+掌握元功能包使用语法；
+
+掌握launch文件的使用语法；
+
+理解什么是ROS工作空间覆盖，以及存在什么安全隐患；
+
+掌握节点名称重名时的处理方式；
+
+掌握话题名称重名时的处理方式；
+
+掌握参数名称重名时的处理方式；
+
+能够实现ROS分布式通信。
+ launch文件标签之launch
+<launch>标签是所有 launch 文件的根标签，充当其他标签的容器
+
+<node>标签用于指定 ROS 节点，是最常见的标签，需要注意的是: roslaunch 命令不能保证按照 node 的声明顺序来启动节点(节点的启动是多进程的)
+
+1.属性
+pkg="包名"
+
+节点所属的包
+
+type="nodeType"
+
+节点类型(与之相同名称的可执行文件)
+
+name="nodeName"
+
+节点名称(在 ROS 网络拓扑中节点的名称)
+
+args="xxx xxx xxx" (可选)
+
+将参数传递给节点
+
+machine="机器名"
+
+在指定机器上启动节点
+
+respawn="true | false" (可选)
+
+如果节点退出，是否自动重启
+
+respawn_delay=" N" (可选)
+
+如果 respawn 为 true, 那么延迟 N 秒后启动节点
+
+required="true | false" (可选)
+
+该节点是否必须，如果为 true,那么如果该节点退出，将杀死整个 roslaunch
+
+ns="xxx" (可选)
+
+在指定命名空间 xxx 中启动节点
+
+clear_params="true | false" (可选)
+
+在启动前，删除节点的私有空间的所有参数
+
+output="log | screen" (可选)
+
+日志发送目标，可以设置为 log 日志文件，或 screen 屏幕,默认是 log
+
+2.子级标签
+env 环境变量设置
+
+remap 重映射节点名称
+
+rosparam 参数设置
+
+param 参数设置
+
+
+include标签用于将另一个 xml 格式的 launch 文件导入到当前文件
+
+1.属性
+file="$(find 包名)/xxx/xxx.launch"
+
+要包含的文件路径
+
+ns="xxx" (可选)
+
+在指定命名空间导入文件
+
+2.子级标签
+env 环境变量设置
+
+arg 将参数传递给被包含的文件
+
+用于话题重命名
+
+1.属性
+from="xxx"
+
+原始话题名称
+
+to="yyy"
+
+目标名称
+
+2.子级标签
+无
+<param>标签主要用于在参数服务器上设置参数，参数源可以在标签中通过 value 指定，也可以通过外部文件加载，在<node>标签中时，相当于私有命名空间。
+
+1.属性
+name="命名空间/参数名"
+
+参数名称，可以包含命名空间
+
+value="xxx" (可选)
+
+定义参数值，如果此处省略，必须指定外部文件作为参数源
+
+type="str | int | double | bool | yaml" (可选)
+
+指定参数类型，如果未指定，roslaunch 会尝试确定参数类型，规则如下:
+
+如果包含 '.' 的数字解析未浮点型，否则为整型
+
+"true" 和 "false" 是 bool 值(不区分大小写)
+
+其他是字符串
+
+2.子级标签
+无
+<rosparam>标签可以从 YAML 文件导入参数，或将参数导出到 YAML 文件，也可以用来删除参数，<rosparam>标签在<node>标签中时被视为私有。
+
+1.属性
+command="load | dump | delete" (可选，默认 load)
+
+加载、导出或删除参数
+
+file="$(find xxxxx)/xxx/yyy...."
+
+加载或导出到的 yaml 文件
+
+param="参数名称"
+
+ns="命名空间" (可选)
+
+2.子级标签
+无
+<group>标签可以对节点分组，具有 ns 属性，可以让节点归属某个命名空间
+
+1.属性
+ns="名称空间" (可选)
+
+clear_params="true | false" (可选)
+
+启动前，是否删除组名称空间的所有参数(慎用....此功能危险)
+
+2.子级标签
+除了launch 标签外的其他标签
+<arg>标签是用于动态传参，类似于函数的参数，可以增强launch文件的灵活性
+
+1.属性
+name="参数名称"
+
+default="默认值" (可选)
+
+value="数值" (可选)
+
+不可以与 default 并存
+
+doc="描述"
+
+参数说明
+
+2.子级标签
+无
+3.示例
+launch文件传参语法实现,hello.lcaunch
+
+<launch>
+    <arg name="xxx" />
+    <param name="param" value="$(arg xxx)" />
+</launch>
+Copy
+命令行调用launch传参
+
+roslaunch hello.launch xxx:=值
+ROS节点名称重名
+场景:ROS 中创建的节点是有名称的，C++初始化节点时通过API:ros::init(argc,argv,"xxxx");来定义节点名称，在Python中初始化节点则通过 rospy.init_node("yyyy") 来定义节点名称。在ROS的网络拓扑中，是不可以出现重名的节点的，因为假设可以重名存在，那么调用时会产生混淆，这也就意味着，不可以启动重名节点或者同一个节点启动多次，的确，在ROS中如果启动重名节点的话，之前已经存在的节点会被直接关闭，但是如果有这种需求的话，怎么优化呢？
+
+在ROS中给出的解决策略是使用命名空间或名称重映射。
+
+命名空间就是为名称添加前缀，名称重映射是为名称起别名。这两种策略都可以解决节点重名问题，两种策略的实现途径有多种:
+
+rosrun 命令
+launch 文件
+编码实现
+以上三种途径都可以通过命名空间或名称重映射的方式，来避免节点重名，本节将对三者的使用逐一演示，三者要实现的需求类似。
+
+案例
+启动两个 turtlesim_node 节点，当然如果直接打开两个终端，直接启动，那么第一次启动的节点会关闭，并给出提示:
+
+[ WARN] [1578812836.351049332]: Shutdown request received.
+[ WARN] [1578812836.351207362]: Reason given for shutdown: [new node registered with same name]
+Copy
+因为两个节点不能重名，接下来将会介绍解决重名问题的多种方案。
+ROS话题名称设置
+在ROS中节点名称可能出现重名的情况，同理话题名称也可能重名。
+
+在 ROS 中节点终端，不同的节点之间通信都依赖于话题，话题名称也可能出现重复的情况，这种情况下，系统虽然不会抛出异常，但是可能导致订阅的消息非预期的，从而导致节点运行异常。这种情况下需要将两个节点的话题名称由相同修改为不同。
+
+又或者，两个节点是可以通信的，两个节点之间使用了相同的消息类型，但是由于，话题名称不同，导致通信失败。这种情况下需要将两个节点的话题名称由不同修改为相同。
+
+在实际应用中，按照逻辑，有些时候可能需要将相同的话题名称设置为不同，也有可能将不同的话题名设置为相同。在ROS中给出的解决策略与节点名称重命类似，也是使用名称重映射或为名称添加前缀。根据前缀不同，有全局、相对、和私有三种类型之分。
+
+全局(参数名称直接参考ROS系统，与节点命名空间平级)
+相对(参数名称参考的是节点的命名空间，与节点名称平级)
+私有(参数名称参考节点名称，是节点名称的子级)
+名称重映射是为名称起别名，为名称添加前缀，该实现比节点重名更复杂些，不单是使用命名空间作为前缀、还可以使用节点名称最为前缀。两种策略的实现途径有多种:
+
+rosrun 命令
+launch 文件
+编码实现
+本节将对三者的使用逐一演示，三者要实现的需求类似。
+
+案例
+在ROS中提供了一个比较好用的键盘控制功能包: ros-noetic-teleop-twist-keyboard，该功能包，可以控制机器人的运动，作用类似于乌龟的键盘控制节点，可以使用 sudo apt install ros-noetic-teleop-twist-keyboard 来安装该功能包，然后执行: rosrun teleop_twist_keyboard teleop_twist_keyboard.py，在启动乌龟显示节点，不过此时前者不能控制乌龟运动，因为，二者使用的话题名称不同，前者使用的是 cmd_vel话题，后者使用的是 /turtle1/cmd_vel话题。需要将话题名称修改为一致，才能使用，如何实现？
+ROS参数名称设置
+在ROS中节点名称话题名称可能出现重名的情况，同理参数名称也可能重名。
+
+当参数名称重名时，那么就会产生覆盖，如何避免这种情况？
+
+关于参数重名的处理，没有重映射实现，为了尽量的避免参数重名，都是使用为参数名添加前缀的方式，实现类似于话题名称，有全局、相对、和私有三种类型之分。
+
+全局(参数名称直接参考ROS系统，与节点命名空间平级)
+相对(参数名称参考的是节点的命名空间，与节点名称平级)
+私有(参数名称参考节点名称，是节点名称的子级)
+设置参数的方式也有三种:
+
+rosrun 命令
+launch 文件
+编码实现
+三种设置方式前面都已经有所涉及，但是之前没有涉及命名问题，本节将对三者命名的设置逐一演示。
+
+案例
+启动节点时，为参数服务器添加参数(需要注意参数名称设置)。
+ROS分布式通信
+ROS是一个分布式计算环境。一个运行中的ROS系统可以包含分布在多台计算机上多个节点。根据系统的配置方式，任何节点可能随时需要与任何其他节点进行通信。
+
+因此，ROS对网络配置有某些要求：
+
+所有端口上的所有机器之间必须有完整的双向连接。
+
+每台计算机必须通过所有其他计算机都可以解析的名称来公告自己。
+
+实现
+1.准备
+先要保证不同计算机处于同一网络中，最好分别设置固定IP，如果为虚拟机，需要将网络适配器改为桥接模式；
+
+2.配置文件修改
+分别修改不同计算机的 /etc/hosts 文件，在该文件中加入对方的IP地址和计算机名:
+
+主机端:
+
+从机的IP    从机计算机名
+Copy
+从机端:
+
+主机的IP    主机计算机名
+Copy
+设置完毕，可以通过 ping 命令测试网络通信是否正常。
+
+IP地址查看名: ifconfig
+
+计算机名称查看: hostname
+
+3.配置主机IP
+配置主机的 IP 地址
+
+~/.bashrc 追加
+
+export ROS_MASTER_URI=http://主机IP:11311
+export ROS_HOSTNAME=主机IP
+Copy
+4.配置从机IP
+配置从机的 IP 地址，从机可以有多台，每台都做如下设置:
+
+~/.bashrc 追加
+
+export ROS_MASTER_URI=http://主机IP:11311
+export ROS_HOSTNAME=从机IP
+Copy
+测试
+1.主机启动 roscore(必须)
+
+2.主机启动订阅节点，从机启动发布节点，测试通信是否正常
+
+3.反向测试，主机启动发布节点，从机启动订阅节点，测试通信是否正常
+ROS常用组件
+在ROS中内置一些比较实用的工具，通过这些工具可以方便快捷的实现某个功能或调试程序，从而提高开发效率，本章主要介绍ROS中内置的如下组件:
+
+TF坐标变换，实现不同类型的坐标系之间的转换；
+rosbag 用于录制ROS节点的执行过程并可以重放该过程；
+rqt 工具箱，集成了多款图形化的调试工具。
+本章预期达成的学习目标:
+
+了解 TF 坐标变换的概念以及应用场景；
+能够独立完成TF案例:小乌龟跟随；
+可以使用 rosbag 命令或编码的形式实现录制与回放；
+能够熟练使用rqt中的图形化工具。
+案例演示: 小乌龟跟随实现，该案例是ros中内置案例，终端下键入启动命令
+
+roslaunch turtle_tf2 turtle_tf2_demo_cpp.launch或roslaunch turtle_tf2 turtle_tf2_demo.launch
+
+键盘可以控制一只乌龟运动，另一只跟随运动。
+5.1 TF坐标变换
+机器人系统上，有多个传感器，如激光雷达、摄像头等，有的传感器是可以感知机器人周边的物体方位(或者称之为:坐标，横向、纵向、高度的距离信息)的，以协助机器人定位障碍物，可以直接将物体相对该传感器的方位信息，等价于物体相对于机器人系统或机器人其它组件的方位信息吗？显示是不行的，这中间需要一个转换过程。
+作用
+在 ROS 中用于实现不同坐标系之间的点或向量的转换。
+
+案例
+小乌龟跟随案例：如本章引言部分演示。
+
+说明
+在ROS中坐标变换最初对应的是tf，不过在 hydro 版本开始, tf 被弃用，迁移到 tf2,后者更为简洁高效，tf2对应的常用功能包有:
+
+tf2_geometry_msgs:可以将ROS消息转换成tf2消息。
+
+tf2: 封装了坐标变换的常用消息。
+
+tf2_ros:为tf2提供了roscpp和rospy绑定，封装了坐标变换常用的API。
+坐标msg消息
+订阅发布模型中数据载体 msg 是一个重要实现，首先需要了解一下，在坐标转换实现中常用的 msg:geometry_msgs/TransformStamped和geometry_msgs/PointStamped
+
+前者用于传输坐标系相关位置信息，后者用于传输某个坐标系内坐标点的信息。在坐标变换中，频繁的需要使用到坐标系的相对关系以及坐标点信息。
+
+1.geometry_msgs/TransformStamped
+命令行键入:rosmsg info geometry_msgs/TransformStamped
+
+std_msgs/Header header                     #头信息
+  uint32 seq                                #|-- 序列号
+  time stamp                                #|-- 时间戳
+  string frame_id                            #|-- 坐标 ID
+string child_frame_id                    #子坐标系的 id
+geometry_msgs/Transform transform        #坐标信息
+  geometry_msgs/Vector3 translation        #偏移量
+    float64 x                                #|-- X 方向的偏移量
+    float64 y                                #|-- Y 方向的偏移量
+    float64 z                                #|-- Z 方向上的偏移量
+  geometry_msgs/Quaternion rotation        #四元数
+    float64 x                                
+    float64 y                                
+    float64 z                                
+    float64 w
+Copy
+四元数用于表示坐标的相对姿态
+
+2.geometry_msgs/PointStamped
+命令行键入:rosmsg info geometry_msgs/PointStamped
+
+std_msgs/Header header                    #头
+  uint32 seq                                #|-- 序号
+  time stamp                                #|-- 时间戳
+  string frame_id                            #|-- 所属坐标系的 id
+geometry_msgs/Point point                #点坐标
+  float64 x                                    #|-- x y z 坐标
+  float64 y
+  float64 z
+静态坐标变换
+所谓静态坐标变换，是指两个坐标系之间的相对位置是固定的。
+
+需求描述:
+
+现有一机器人模型，核心构成包含主体与雷达，各对应一坐标系，坐标系的原点分别位于主体与雷达的物理中心，已知雷达原点相对于主体原点位移关系如下: x 0.2 y0.0 z0.5。当前雷达检测到一障碍物，在雷达坐标系中障碍物的坐标为 (2.0 3.0 5.0),请问，该障碍物相对于主体的坐标是多少？
+实现分析:
+
+坐标系相对关系，可以通过发布方发布
+订阅方，订阅到发布的坐标系相对关系，再传入坐标点信息(可以写死)，然后借助于 tf 实现坐标变换，并将结果输出
+实现流程:C++ 与 Python 实现流程一致
+
+新建功能包，添加依赖
+编写发布方实现
+编写订阅方实现
+执行并查看结果
+方案A:C++实现
+
+1.创建功能包
+创建项目功能包依赖于 tf2、tf2_ros、tf2_geometry_msgs、roscpp rospy std_msgs geometry_msgs
+
+2.发布方
+/* 
+    静态坐标变换发布方:
+        发布关于 laser 坐标系的位置信息 
+
+    实现流程:
+        1.包含头文件
+        2.初始化 ROS 节点
+        3.创建静态坐标转换广播器
+        4.创建坐标系信息
+        5.广播器发布坐标系信息
+        6.spin()
+*/
+
+
+// 1.包含头文件
+#include "ros/ros.h"
+#include "tf2_ros/static_transform_broadcaster.h"
+#include "geometry_msgs/TransformStamped.h"
+#include "tf2/LinearMath/Quaternion.h"
+
+int main(int argc, char *argv[])
+{
+    setlocale(LC_ALL,"");
+    // 2.初始化 ROS 节点
+    ros::init(argc,argv,"static_brocast");
+    // 3.创建静态坐标转换广播器
+    tf2_ros::StaticTransformBroadcaster broadcaster;
+    // 4.创建坐标系信息
+    geometry_msgs::TransformStamped ts;
+    //----设置头信息
+    ts.header.seq = 100;
+    ts.header.stamp = ros::Time::now();
+    ts.header.frame_id = "base_link";
+    //----设置子级坐标系
+    ts.child_frame_id = "laser";
+    //----设置子级相对于父级的偏移量
+    ts.transform.translation.x = 0.2;
+    ts.transform.translation.y = 0.0;
+    ts.transform.translation.z = 0.5;
+    //----设置四元数:将 欧拉角数据转换成四元数
+    tf2::Quaternion qtn;
+    qtn.setRPY(0,0,0);
+    ts.transform.rotation.x = qtn.getX();
+    ts.transform.rotation.y = qtn.getY();
+    ts.transform.rotation.z = qtn.getZ();
+    ts.transform.rotation.w = qtn.getW();
+    // 5.广播器发布坐标系信息
+    broadcaster.sendTransform(ts);
+    ros::spin();
+    return 0;
+}
+Copy
+配置文件此处略。
+
+3.订阅方
+/*  
+    订阅坐标系信息，生成一个相对于 子级坐标系的坐标点数据，转换成父级坐标系中的坐标点
+
+    实现流程:
+        1.包含头文件
+        2.初始化 ROS 节点
+        3.创建 TF 订阅节点
+        4.生成一个坐标点(相对于子级坐标系)
+        5.转换坐标点(相对于父级坐标系)
+        6.spin()
+*/
+//1.包含头文件
+#include "ros/ros.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
+#include "geometry_msgs/PointStamped.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h" //注意: 调用 transform 必须包含该头文件
+
+int main(int argc, char *argv[])
+{
+    setlocale(LC_ALL,"");
+    // 2.初始化 ROS 节点
+    ros::init(argc,argv,"tf_sub");
+    ros::NodeHandle nh;
+    // 3.创建 TF 订阅节点
+    tf2_ros::Buffer buffer;
+    tf2_ros::TransformListener listener(buffer);
+
+    ros::Rate r(1);
+    while (ros::ok())
+    {
+    // 4.生成一个坐标点(相对于子级坐标系)
+        geometry_msgs::PointStamped point_laser;
+        point_laser.header.frame_id = "laser";
+        point_laser.header.stamp = ros::Time::now();
+        point_laser.point.x = 1;
+        point_laser.point.y = 2;
+        point_laser.point.z = 7.3;
+    // 5.转换坐标点(相对于父级坐标系)
+        //新建一个坐标点，用于接收转换结果  
+        //--------------使用 try 语句或休眠，否则可能由于缓存接收延迟而导致坐标转换失败------------------------
+        try
+        {
+            geometry_msgs::PointStamped point_base;
+            point_base = buffer.transform(point_laser,"base_link");
+            ROS_INFO("转换后的数据:(%.2f,%.2f,%.2f),参考的坐标系是:",point_base.point.x,point_base.point.y,point_base.point.z,point_base.header.frame_id.c_str());
+
+        }
+        catch(const std::exception& e)
+        {
+            // std::cerr << e.what() << '\n';
+            ROS_INFO("程序异常.....");
+        }
+
+
+        r.sleep();  
+        ros::spinOnce();
+    }
+
+
+    return 0;
+}
+Copy
+配置文件此处略。
+
+4.执行
+可以使用命令行或launch文件的方式分别启动发布节点与订阅节点，如果程序无异常，控制台将输出，坐标转换后的结果。
+
+方案B:Python实现
+
+1.创建功能包
+创建项目功能包依赖于 tf2、tf2_ros、tf2_geometry_msgs、roscpp rospy std_msgs geometry_msgs
+
+2.发布方
+#! /usr/bin/env python
+"""  
+    静态坐标变换发布方:
+        发布关于 laser 坐标系的位置信息 
+    实现流程:
+        1.导包
+        2.初始化 ROS 节点
+        3.创建 静态坐标广播器
+        4.创建并组织被广播的消息
+        5.广播器发送消息
+        6.spin
+"""
+# 1.导包
+import rospy
+import tf2_ros
+import tf
+from geometry_msgs.msg import TransformStamped
+
+if __name__ == "__main__":
+    # 2.初始化 ROS 节点
+    rospy.init_node("static_tf_pub_p")
+    # 3.创建 静态坐标广播器
+    broadcaster = tf2_ros.StaticTransformBroadcaster()
+    # 4.创建并组织被广播的消息
+    tfs = TransformStamped()
+    # --- 头信息
+    tfs.header.frame_id = "world"
+    tfs.header.stamp = rospy.Time.now()
+    tfs.header.seq = 101
+    # --- 子坐标系
+    tfs.child_frame_id = "radar"
+    # --- 坐标系相对信息
+    # ------ 偏移量
+    tfs.transform.translation.x = 0.2
+    tfs.transform.translation.y = 0.0
+    tfs.transform.translation.z = 0.5
+    # ------ 四元数
+    qtn = tf.transformations.quaternion_from_euler(0,0,0)
+    tfs.transform.rotation.x = qtn[0]
+    tfs.transform.rotation.y = qtn[1]
+    tfs.transform.rotation.z = qtn[2]
+    tfs.transform.rotation.w = qtn[3]
+
+
+    # 5.广播器发送消息
+    broadcaster.sendTransform(tfs)
+    # 6.spin
+    rospy.spin()
+Copy
+权限设置以及配置文件此处略。
+
+3.订阅方
+#! /usr/bin/env python
+"""  
+    订阅坐标系信息，生成一个相对于 子级坐标系的坐标点数据，
+    转换成父级坐标系中的坐标点
+
+    实现流程:
+        1.导包
+        2.初始化 ROS 节点
+        3.创建 TF 订阅对象
+        4.创建一个 radar 坐标系中的坐标点
+        5.调研订阅对象的 API 将 4 中的点坐标转换成相对于 world 的坐标
+        6.spin
+
+"""
+# 1.导包
+import rospy
+import tf2_ros
+# 不要使用 geometry_msgs,需要使用 tf2 内置的消息类型
+from tf2_geometry_msgs import PointStamped
+# from geometry_msgs.msg import PointStamped
+
+if __name__ == "__main__":
+    # 2.初始化 ROS 节点
+    rospy.init_node("static_sub_tf_p")
+    # 3.创建 TF 订阅对象
+    buffer = tf2_ros.Buffer()
+    listener = tf2_ros.TransformListener(buffer)
+
+    rate = rospy.Rate(1)
+    while not rospy.is_shutdown():    
+    # 4.创建一个 radar 坐标系中的坐标点
+        point_source = PointStamped()
+        point_source.header.frame_id = "radar"
+        point_source.header.stamp = rospy.Time.now()
+        point_source.point.x = 10
+        point_source.point.y = 2
+        point_source.point.z = 3
+
+        try:
+    #     5.调研订阅对象的 API 将 4 中的点坐标转换成相对于 world 的坐标
+            point_target = buffer.transform(point_source,"world")
+            rospy.loginfo("转换结果:x = %.2f, y = %.2f, z = %.2f",
+                            point_target.point.x,
+                            point_target.point.y,
+                            point_target.point.z)
+        except Exception as e:
+            rospy.logerr("异常:%s",e)
+
+    #     6.spin
+        rate.sleep()
+Copy
+权限设置以及配置文件此处略。
+
+PS: 在 tf2 的 python 实现中，tf2 已经封装了一些消息类型，不可以使用 geometry_msgs.msg 中的类型
+
+4.执行
+可以使用命令行或launch文件的方式分别启动发布节点与订阅节点，如果程序无异常，控制台将输出，坐标转换后的结果。
+
+补充1:
+当坐标系之间的相对位置固定时，那么所需参数也是固定的: 父系坐标名称、子级坐标系名称、x偏移量、y偏移量、z偏移量、x 翻滚角度、y俯仰角度、z偏航角度，实现逻辑相同，参数不同，那么 ROS 系统就已经封装好了专门的节点，使用方式如下:
+
+rosrun tf2_ros static_transform_publisher x偏移量 y偏移量 z偏移量 z偏航角度 y俯仰角度 x翻滚角度 父级坐标系 子级坐标系
+
+示例:rosrun tf2_ros static_transform_publisher 0.2 0 0.5 0 0 0 /baselink /laser
+
+也建议使用该种方式直接实现静态坐标系相对信息发布。
+
+补充2:
+可以借助于rviz显示坐标系关系，具体操作:
+
+新建窗口输入命令:rviz;
+在启动的 rviz 中设置Fixed Frame 为 base_link;
+点击左下的 add 按钮，在弹出的窗口中选择 TF 组件，即可显示坐标关系。
+另请参考:
+
+http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20static%20broadcaster%20%28C%2B%2B%29
+
+http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20static%20broadcaster%20%28Python%29
+
+http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20listener%20%28C%2B%2B%29
+
+http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20listener%20%28Python%29
+动态坐标变换
+所谓动态坐标变换，是指两个坐标系之间的相对位置是变化的。
+
+需求描述:
+
+启动 turtlesim_node,该节点中窗体有一个世界坐标系(左下角为坐标系原点)，乌龟是另一个坐标系，键盘控制乌龟运动，将两个坐标系的相对位置动态发布。
+
+结果演示:
+实现分析:
+
+乌龟本身不但可以看作坐标系，也是世界坐标系中的一个坐标点
+
+订阅 turtle1/pose,可以获取乌龟在世界坐标系的 x坐标、y坐标、偏移量以及线速度和角速度
+
+将 pose 信息转换成 坐标系相对信息并发布
+
+实现流程:C++ 与 Python 实现流程一致
+
+新建功能包，添加依赖
+
+创建坐标相对关系发布方(同时需要订阅乌龟位姿信息)
+
+创建坐标相对关系订阅方
+
+执行
+
+方案A:C++实现
+
+1.创建功能包
+创建项目功能包依赖于 tf2、tf2_ros、tf2_geometry_msgs、roscpp rospy std_msgs geometry_msgs、turtlesim
+
+2.发布方
+/*  
+    动态的坐标系相对姿态发布(一个坐标系相对于另一个坐标系的相对姿态是不断变动的)
+
+    需求: 启动 turtlesim_node,该节点中窗体有一个世界坐标系(左下角为坐标系原点)，乌龟是另一个坐标系，键盘
+    控制乌龟运动，将两个坐标系的相对位置动态发布
+
+    实现分析:
+        1.乌龟本身不但可以看作坐标系，也是世界坐标系中的一个坐标点
+        2.订阅 turtle1/pose,可以获取乌龟在世界坐标系的 x坐标、y坐标、偏移量以及线速度和角速度
+        3.将 pose 信息转换成 坐标系相对信息并发布
+
+    实现流程:
+        1.包含头文件
+        2.初始化 ROS 节点
+        3.创建 ROS 句柄
+        4.创建订阅对象
+        5.回调函数处理订阅到的数据(实现TF广播)
+            5-1.创建 TF 广播器
+            5-2.创建 广播的数据(通过 pose 设置)
+            5-3.广播器发布数据
+        6.spin
+*/
+// 1.包含头文件
+#include "ros/ros.h"
+#include "turtlesim/Pose.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "geometry_msgs/TransformStamped.h"
+#include "tf2/LinearMath/Quaternion.h"
+
+void doPose(const turtlesim::Pose::ConstPtr& pose){
+    //  5-1.创建 TF 广播器
+    static tf2_ros::TransformBroadcaster broadcaster;
+    //  5-2.创建 广播的数据(通过 pose 设置)
+    geometry_msgs::TransformStamped tfs;
+    //  |----头设置
+    tfs.header.frame_id = "world";
+    tfs.header.stamp = ros::Time::now();
+
+    //  |----坐标系 ID
+    tfs.child_frame_id = "turtle1";
+
+    //  |----坐标系相对信息设置
+    tfs.transform.translation.x = pose->x;
+    tfs.transform.translation.y = pose->y;
+    tfs.transform.translation.z = 0.0; // 二维实现，pose 中没有z，z 是 0
+    //  |--------- 四元数设置
+    tf2::Quaternion qtn;
+    qtn.setRPY(0,0,pose->theta);
+    tfs.transform.rotation.x = qtn.getX();
+    tfs.transform.rotation.y = qtn.getY();
+    tfs.transform.rotation.z = qtn.getZ();
+    tfs.transform.rotation.w = qtn.getW();
+
+
+    //  5-3.广播器发布数据
+    broadcaster.sendTransform(tfs);
+}
+
+int main(int argc, char *argv[])
+{
+    setlocale(LC_ALL,"");
+    // 2.初始化 ROS 节点
+    ros::init(argc,argv,"dynamic_tf_pub");
+    // 3.创建 ROS 句柄
+    ros::NodeHandle nh;
+    // 4.创建订阅对象
+    ros::Subscriber sub = nh.subscribe<turtlesim::Pose>("/turtle1/pose",1000,doPose);
+    //     5.回调函数处理订阅到的数据(实现TF广播)
+    //        
+    // 6.spin
+    ros::spin();
+    return 0;
+}
+Copy
+配置文件此处略。
+
+3.订阅方
+//1.包含头文件
+#include "ros/ros.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
+#include "geometry_msgs/PointStamped.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h" //注意: 调用 transform 必须包含该头文件
+
+int main(int argc, char *argv[])
+{
+    setlocale(LC_ALL,"");
+    // 2.初始化 ROS 节点
+    ros::init(argc,argv,"dynamic_tf_sub");
+    ros::NodeHandle nh;
+    // 3.创建 TF 订阅节点
+    tf2_ros::Buffer buffer;
+    tf2_ros::TransformListener listener(buffer);
+
+    ros::Rate r(1);
+    while (ros::ok())
+    {
+    // 4.生成一个坐标点(相对于子级坐标系)
+        geometry_msgs::PointStamped point_laser;
+        point_laser.header.frame_id = "turtle1";
+        point_laser.header.stamp = ros::Time();
+        point_laser.point.x = 1;
+        point_laser.point.y = 1;
+        point_laser.point.z = 0;
+    // 5.转换坐标点(相对于父级坐标系)
+        //新建一个坐标点，用于接收转换结果  
+        //--------------使用 try 语句或休眠，否则可能由于缓存接收延迟而导致坐标转换失败------------------------
+        try
+        {
+            geometry_msgs::PointStamped point_base;
+            point_base = buffer.transform(point_laser,"world");
+            ROS_INFO("坐标点相对于 world 的坐标为:(%.2f,%.2f,%.2f)",point_base.point.x,point_base.point.y,point_base.point.z);
+
+        }
+        catch(const std::exception& e)
+        {
+            // std::cerr << e.what() << '\n';
+            ROS_INFO("程序异常:%s",e.what());
+        }
+
+
+        r.sleep();  
+        ros::spinOnce();
+    }
+
+
+    return 0;
+}
+Copy
+配置文件此处略。
+
+4.执行
+可以使用命令行或launch文件的方式分别启动发布节点与订阅节点，如果程序无异常，与演示结果类似。
+
+可以使用 rviz 查看坐标系相对关系。
+
+方案B:Python实现
+
+1.创建功能包
+创建项目功能包依赖于 tf2、tf2_ros、tf2_geometry_msgs、roscpp rospy std_msgs geometry_msgs、turtlesim
+
+2.发布方
+#! /usr/bin/env python
+"""  
+    动态的坐标系相对姿态发布(一个坐标系相对于另一个坐标系的相对姿态是不断变动的)
+
+    需求: 启动 turtlesim_node,该节点中窗体有一个世界坐标系(左下角为坐标系原点)，乌龟是另一个坐标系，键盘
+    控制乌龟运动，将两个坐标系的相对位置动态发布
+
+    实现分析:
+        1.乌龟本身不但可以看作坐标系，也是世界坐标系中的一个坐标点
+        2.订阅 turtle1/pose,可以获取乌龟在世界坐标系的 x坐标、y坐标、偏移量以及线速度和角速度
+        3.将 pose 信息转换成 坐标系相对信息并发布
+    实现流程:
+        1.导包
+        2.初始化 ROS 节点
+        3.订阅 /turtle1/pose 话题消息
+        4.回调函数处理
+            4-1.创建 TF 广播器
+            4-2.创建 广播的数据(通过 pose 设置)
+            4-3.广播器发布数据
+        5.spin
+"""
+# 1.导包
+import rospy
+import tf2_ros
+import tf
+from turtlesim.msg import Pose
+from geometry_msgs.msg import TransformStamped
+
+#     4.回调函数处理
+def doPose(pose):
+    #         4-1.创建 TF 广播器
+    broadcaster = tf2_ros.TransformBroadcaster()
+    #         4-2.创建 广播的数据(通过 pose 设置)
+    tfs = TransformStamped()
+    tfs.header.frame_id = "world"
+    tfs.header.stamp = rospy.Time.now()
+    tfs.child_frame_id = "turtle1"
+    tfs.transform.translation.x = pose.x
+    tfs.transform.translation.y = pose.y
+    tfs.transform.translation.z = 0.0
+    qtn = tf.transformations.quaternion_from_euler(0,0,pose.theta)
+    tfs.transform.rotation.x = qtn[0]
+    tfs.transform.rotation.y = qtn[1]
+    tfs.transform.rotation.z = qtn[2]
+    tfs.transform.rotation.w = qtn[3]
+    #         4-3.广播器发布数据
+    broadcaster.sendTransform(tfs)
+
+if __name__ == "__main__":
+    # 2.初始化 ROS 节点
+    rospy.init_node("dynamic_tf_pub_p")
+    # 3.订阅 /turtle1/pose 话题消息
+    sub = rospy.Subscriber("/turtle1/pose",Pose,doPose)
+    #     4.回调函数处理
+    #         4-1.创建 TF 广播器
+    #         4-2.创建 广播的数据(通过 pose 设置)
+    #         4-3.广播器发布数据
+    #     5.spin
+    rospy.spin()
+Copy
+权限设置以及配置文件此处略。
+
+3.订阅方
+#! /usr/bin/env python
+"""  
+    动态的坐标系相对姿态发布(一个坐标系相对于另一个坐标系的相对姿态是不断变动的)
+
+    需求: 启动 turtlesim_node,该节点中窗体有一个世界坐标系(左下角为坐标系原点)，乌龟是另一个坐标系，键盘
+    控制乌龟运动，将两个坐标系的相对位置动态发布
+
+    实现分析:
+        1.乌龟本身不但可以看作坐标系，也是世界坐标系中的一个坐标点
+        2.订阅 turtle1/pose,可以获取乌龟在世界坐标系的 x坐标、y坐标、偏移量以及线速度和角速度
+        3.将 pose 信息转换成 坐标系相对信息并发布
+    实现流程:
+        1.导包
+        2.初始化 ROS 节点
+        3.创建 TF 订阅对象
+        4.处理订阅的数据
+
+
+"""
+# 1.导包
+import rospy
+import tf2_ros
+# 不要使用 geometry_msgs,需要使用 tf2 内置的消息类型
+from tf2_geometry_msgs import PointStamped
+# from geometry_msgs.msg import PointStamped
+
+if __name__ == "__main__":
+    # 2.初始化 ROS 节点
+    rospy.init_node("static_sub_tf_p")
+    # 3.创建 TF 订阅对象
+    buffer = tf2_ros.Buffer()
+    listener = tf2_ros.TransformListener(buffer)
+
+    rate = rospy.Rate(1)
+    while not rospy.is_shutdown():    
+    # 4.创建一个 radar 坐标系中的坐标点
+        point_source = PointStamped()
+        point_source.header.frame_id = "turtle1"
+        point_source.header.stamp = rospy.Time.now()
+        point_source.point.x = 10
+        point_source.point.y = 2
+        point_source.point.z = 3
+
+        try:
+    #     5.调研订阅对象的 API 将 4 中的点坐标转换成相对于 world 的坐标
+            point_target = buffer.transform(point_source,"world",rospy.Duration(1))
+            rospy.loginfo("转换结果:x = %.2f, y = %.2f, z = %.2f",
+                            point_target.point.x,
+                            point_target.point.y,
+                            point_target.point.z)
+        except Exception as e:
+            rospy.logerr("异常:%s",e)
+
+    #     6.spin
+        rate.sleep()
+Copy
+权限设置以及配置文件此处略。
+
+4.执行
+可以使用命令行或launch文件的方式分别启动发布节点与订阅节点，如果程序无异常，与演示结果类似。
+
+可以使用 rviz 查看坐标系相对关系。
+
+另请参考:
+
+http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20broadcaster%20%28C%2B%2B%29
+http://wiki.ros.org/tf2/Tutorials/Writing%20a%20tf2%20broadcaster%20%28Python%29
